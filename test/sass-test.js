@@ -181,7 +181,8 @@ describe('sass(1)', function () {
             it('should generate foo component', function (done) {
                 runRaw(ctx.dir, ['g', 'foo'], function (err, code, stdout, stderr) {
                     if (err) return done(err)
-                    assert.equal(stdout, '   \u001b[36mcreate\u001b[0m : scss/partials/foo.scss\n   \u001b[36mcreate\u001b[0m : scss/modules/foo.scss\n   \u001b[36mcreate\u001b[0m : scss/variables/foo_var.scss\n\n   \u001b[31mmodified\u001b[0m : scss/style.scss\n\n' )
+                    assert.ok(/foo.scss/.test(stdout))
+                    assert.ok(/style.scss/.test(stdout))
                     done()
                 })
             })
@@ -228,7 +229,8 @@ describe('sass(1)', function () {
             it('should generate foo component', function (done) {
                 runRaw(ctx.dir, ['g', 'foo'], function (err, code, stdout, stderr) {
                     if (err) return done(err)
-                    assert.equal(stdout, '   \u001b[36mcreate\u001b[0m : scss/partials/foo.scss\n   \u001b[36mcreate\u001b[0m : scss/modules/foo.scss\n   \u001b[36mcreate\u001b[0m : scss/variables/foo_var.scss\n\n   \u001b[31mmodified\u001b[0m : scss/style.scss\n\n' )
+                    assert.ok(/foo.scss/.test(stdout))
+                    assert.ok(/style.scss/.test(stdout))
                     done()
                 })
             })
