@@ -7,7 +7,7 @@ var rimraf = require('rimraf')
 var spawn = require('child_process').spawn
 
 var PKG_PATH = path.resolve(__dirname, '..', 'package.json')
-var BIN_PATH = path.resolve(path.dirname(PKG_PATH), require(PKG_PATH).bin.sasscli)
+var BIN_PATH = path.resolve(path.dirname(PKG_PATH), require(PKG_PATH).bin.sassg)
 var TEMP_DIR = path.resolve(__dirname, '..', 'temp', String(process.pid + Math.random()))
 
 describe('sass(1)', function () {
@@ -37,7 +37,7 @@ describe('sass(1)', function () {
 
         it('should have basic files', function() {
             assert.notEqual(ctx.files.indexOf('package.json'), -1)
-            assert.notEqual(ctx.files.indexOf('sass-cli.json'), -1)
+            assert.notEqual(ctx.files.indexOf('sassg.json'), -1)
             assert.notEqual(ctx.files.indexOf('Gruntfile.js'), -1)
         })
 
@@ -66,12 +66,12 @@ describe('sass(1)', function () {
                 '}\n')
         })
 
-        it('should have a sass-cli.json file', function() {
-            var file = path.resolve(ctx.dir, 'sass-cli.json')
+        it('should have a sassg.json file', function() {
+            var file = path.resolve(ctx.dir, 'sassg.json')
             var contents = fs.readFileSync(file, 'utf8')
             assert.equal(contents, '{\n' +
                 '  "name": "sass(1)-(no-args)",\n' +
-                '  "cli_version": "0.1.2",\n' +
+                '  "cli_version": "1.0.0",\n' +
                 '  "path": ".",\n' +
                 '  "type": "scss"\n' +
                 '}\n')
