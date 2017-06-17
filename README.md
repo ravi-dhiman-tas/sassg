@@ -5,6 +5,7 @@
 Generator for Sass/SCSS
 
 [![Build Status](https://travis-ci.org/ravid7000/sass-cli.svg?branch=master)](https://travis-ci.org/ravid7000/sass-cli)
+[![Build status](https://ci.appveyor.com/api/projects/status/3lf4x6akj0072vw0?svg=true)](https://ci.appveyor.com/project/ravid7000/sassg)
 
 
 ### Installation
