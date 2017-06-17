@@ -1,0 +1,573 @@
+#!/usr/bin/env node
+
+process.title = "sassg"
+
+var fs = require('fs')
+var mkdirp = require('mkdirp')
+var path = require('path')
+var program = require('commander')
+var readline = require('readline')
+var sortedObject = require('sorted-object')
+var util = require('util')
+var readFile = require('read-file')
+var writeFile = require('write')
+var EOL = require('os').EOL
+
+var MODE_0666 = parseInt('0666', 8)
+var MODE_0755 = parseInt('0755', 8)
+
+
+var _exit = process.exit
+var pkg = require('../package.json')
+
+var version = pkg.version;
+
+var configFile = 'sassg.json'
+
+process.exit = exit
+
+// CLI
+
+around(program, 'optionMissingArgument', function (fn, args) {
+    program.outputHelp()
+    fn.apply(this, args)
+    return {
+        args: [],
+        unknown: []
+    }
+})
+
+before(program, 'outputHelp', function () {
+    // track if help was shown for unknown option
+    this._helpShown = true
+})
+
+before(program, 'unknownOption', function () {
+    // allow unknown options if help was shown, to prevent trailing error
+    this._allowUnknownOption = this._helpShown
+
+    // show help if not yet shown
+    if (!this._helpShown) {
+        program.outputHelp()
+    }
+})
+
+program
+    .version(version, '    --version')
+    .usage('[new] [dir]')
+    .option('    new [value]', 'create new sass/scss project')
+    .option('-s, --sass', 'use sass stylesheet (defaults to scss)')
+    .option('-u, --unit [value]', 'specify units (px|em|rem) (defaults to px)')
+    .option('g,  generate', 'generate component')
+    .option('-f, --force', 'force on non-empty directory')
+    .parse(process.argv)
+
+
+if (!exit.exited) {
+    main()
+}
+
+/**
+ * Install an around function; AOP.
+ */
+
+function around(obj, method, fn) {
+    var old = obj[method]
+
+    obj[method] = function () {
+        var args = new Array(arguments.length)
+        for (var i = 0; i < args.length; i++) args[i] = arguments[i]
+        return fn.call(this, old, args)
+    }
+}
+
+/**
+ * Install a before function; AOP.
+ */
+
+function before(obj, method, fn) {
+    var old = obj[method]
+
+    obj[method] = function () {
+        fn.call(this)
+        old.apply(this, arguments)
+    }
+}
+
+/**
+ * Prompt for confirmation on STDOUT/STDIN
+ */
+
+function confirm(msg, callback) {
+    var rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    })
+
+    rl.question(msg, function (input) {
+        rl.close()
+        callback(/^y|yes|ok|true$/i.test(input))
+    })
+}
+
+/**
+ * Copy file from template directory.
+ */
+
+function copyTemplate(from, to) {
+    from = path.join(__dirname, '..', 'templates', from)
+    write(to, fs.readFileSync(from, 'utf-8'))
+}
+
+/**
+ * Create application at the given directory `path`.
+ *
+ * @param {String} path
+ */
+
+function createApplication(name, path) {
+    var wait = 5
+
+    console.log()
+
+    function complete() {
+        if (--wait) return
+        var prompt = launchedFromCmd() ? '>' : '$'
+
+        console.log('   Completed!')
+        console.log('   install dependencies:')
+        console.log('   %s cd %s && npm install', prompt, path)
+        console.log()
+        console.log('   run the app:')
+        console.log('   %s npm start', prompt)
+        console.log('   %s npm start watch', prompt)
+        console.log()
+    }
+
+    var type = 'scss'
+
+    if(program.sass) {
+        type = 'sass'
+    }
+
+    mkdir(path, function () {
+        if( program.sass ) {
+            mkdir(path + '/sass', function () {
+                mkdir(path + '/sass/modules', function () {
+                    copyTemplate('sass/modules/_base_module.sass', path + '/sass/modules/_base.sass')
+                    complete()
+                })
+                mkdir(path + '/sass/partials', function () {
+                    copyTemplate('sass/partials/_base.sass', path + '/sass/partials/_base.sass')
+                    complete()
+                })
+                mkdir(path + '/sass/variables', function () {
+                    switch(program.unit) {
+                        case 'rem':
+                            copyTemplate('sass/variables/_base_var_rem.sass', path + '/sass/variables/_base_var.sass')
+                            break
+                        case 'em':
+                            copyTemplate('sass/variables/_base_var_em.sass', path + '/sass/variables/_base_var.sass')
+                            break
+                        default:
+                            copyTemplate('sass/variables/_base_var_px.sass', path + '/sass/variables/_base_var.sass')
+                            break
+                    }
+                    complete()
+                })
+                copyTemplate('sass/style.sass', path + '/sass/style.sass')
+                copyTemplate('Gruntfile_sass.js', path + '/Gruntfile.js')
+                complete()
+            })
+        } else {
+            mkdir(path + '/scss', function () {
+                mkdir(path + '/scss/modules', function () {
+                    copyTemplate('scss/modules/_base_module.scss', path + '/scss/modules/_base.scss')
+                    complete()
+                })
+                mkdir(path + '/scss/partials', function () {
+                    copyTemplate('scss/partials/_base.scss', path + '/scss/partials/_base.scss')
+                    complete()
+                })
+                mkdir(path + '/scss/variables', function () {
+                    switch(program.unit) {
+                        case 'rem':
+                            copyTemplate('scss/variables/_base_var_rem.scss', path + '/scss/variables/_base_var.scss')
+                            break
+                        case 'em':
+                            copyTemplate('scss/variables/_base_var_em.scss', path + '/scss/variables/_base_var.scss')
+                            break
+                        default:
+                            copyTemplate('scss/variables/_base_var_px.scss', path + '/scss/variables/_base_var.scss')
+                            break
+                    }
+                    complete()
+                })
+                copyTemplate('scss/style.scss', path + '/scss/style.scss')
+                copyTemplate('Gruntfile_scss.js', path + '/Gruntfile.js')
+                complete()
+            })
+        }
+        complete()
+    })
+
+    var config = {
+        name: name,
+        cli_version: version,
+        path: path,
+        type: type
+    }
+
+    // package.json
+    var pkg = {
+        name: name,
+        version: '0.0.0',
+        private: true,
+        scripts: {
+            start: 'grunt',
+            watch: 'grunt dist'
+        },
+        dependencies: {
+            'grunt-contrib-sass': '~1.0.0',
+            'grunt-contrib-watch': '~1.0.0',
+            'grunt': '~0.4.5',
+            'grunt-cli': '~1.2.0',
+        }
+    }
+
+    pkg.scripts = {
+        start: ""
+    }
+
+    // sort dependencies like npm
+    pkg.dependencies = sortedObject(pkg.dependencies)
+
+    write(path + '/package.json', JSON.stringify(pkg, null, 2) + '\n')
+    write(path + '/' + configFile, JSON.stringify(config, null, 2) + '\n')
+
+}
+
+
+function findUp(name, from) {
+    if(!Array.isArray(name)) {
+        name = [name]
+    }
+
+    var root = path.parse(from).root
+    var currentDir = from
+
+    while(currentDir && currentDir !== root) {
+        for(var i = 0; i < name.length; i++) {
+            var p = path.join(currentDir, name[i])
+            if(fs.existsSync(p)) {
+                return currentDir
+            }
+        }
+
+        var nodeModule = path.join(currentDir, 'node_modules')
+        if(fs.existsSync(nodeModule)) {
+            return null
+        }
+        currentDir = path.dirname(currentDir)
+    }
+
+    return null
+}
+
+
+
+/**
+ * Create an app name from a directory path, fitting npm naming requirements.
+ *
+ * @param {String} pathName
+ */
+
+function createAppName(pathName) {
+    return path.basename(pathName)
+        .replace(/[^A-Za-z0-9.()!~*'-]+/g, '-')
+        .replace(/^[-_.]+|-+$/g, '')
+        .toLowerCase()
+}
+
+/**
+ * Check if the given directory `path` is empty.
+ *
+ * @param {String} path
+ * @param {Function} fn
+ */
+
+function emptyDirectory(path, fn) {
+    fs.readdir(path, function (err, files) {
+        if (err && err.code !== 'ENOENT') throw err
+        fn(!files || !files.length)
+    })
+}
+
+/**
+ * Graceful exit for async STDIO
+ */
+
+function exit(code) {
+    // flush output for Node.js Windows pipe bug
+    // https://github.com/joyent/node/issues/6247 is just one bug example
+    // https://github.com/visionmedia/mocha/issues/333 has a good discussion
+    function done() {
+        if (!(draining--)) _exit(code)
+    }
+
+    var draining = 0
+    var streams = [process.stdout, process.stderr]
+
+    exit.exited = true
+
+    streams.forEach(function (stream) {
+        // submit empty write request and wait for completion
+        draining += 1
+        stream.write('', done)
+    })
+
+    done()
+}
+
+/**
+ * Determine if launched from cmd.exe
+ */
+
+function launchedFromCmd() {
+    return process.platform === 'win32' &&
+        process.env._ === undefined
+}
+
+/**
+ * Load template file.
+ */
+
+function loadTemplate(name) {
+    var contents = fs.readFileSync(path.join(__dirname, '..', 'templates', (name + '.ejs')), 'utf-8')
+    var locals = Object.create(null)
+
+    function render() {
+        return ejs.render(contents, locals)
+    }
+
+    return {
+        locals: locals,
+        render: render
+    }
+}
+
+/**
+ * Main program.
+ */
+
+function main() {
+    // Path
+    if( program.generate ) {
+        generateFiles()
+    } else {
+        var destinationPath = program.new || '.'
+
+        // App name
+        var appName = createAppName(path.resolve(destinationPath)) || 'hello-world'
+
+        // Generate application
+        emptyDirectory(destinationPath, function (empty) {
+            if (empty || program.force) {
+                createApplication(appName, destinationPath)
+            } else {
+                confirm('destination is not empty, continue? [y/N] ', function (ok) {
+                    if (ok) {
+                        process.stdin.destroy()
+                        createApplication(appName, destinationPath)
+                    } else {
+                        console.error('aborting')
+                        exit(1)
+                    }
+                })
+            }
+        })
+    }
+}
+
+/**
+* Generate files
+*/
+
+
+function generateFiles() {
+
+    function throwError(e) {
+        console.error()
+        console.error('\x1b[31m' + e + '\x1b[0m')
+        console.error()
+        exit(1)
+    }
+
+    var configParsed = findUp(configFile, process.cwd())
+
+    if(configParsed) {
+        readConfigFile(configParsed)
+    } else {
+        throwError("   This isn't a sass-cli direcotry.")
+    }
+
+    function readConfigFile(file_path) {
+        try {
+            var contents = fs.readFileSync(file_path + '/' + configFile, 'utf-8')
+            var fileJson = JSON.parse(contents)
+            var newPath = file_path + '/' + fileJson.type
+            var file_names = program.args.shift()
+
+            if(!file_names) {
+                throw('   Error: no file name specified.')
+            }
+
+            var validFileName = new RegExp('variable|module|partial', 'ig')
+
+            if(validFileName.test(file_names)) {
+                throwError('   Cannot create component with reserved words: Variable, Module, Partial')
+                return
+            }
+
+            var newName = "" + file_names + "." + fileJson.type
+            write(newPath + '/partials/' + newName, '\// ' + file_names + ' \n')
+            write(newPath + '/modules/' + newName, '\// ' + file_names + ' \n')
+            newName1 = "" + file_names + "_var." + fileJson.type
+            write(newPath + '/variables/' + newName1, '\// ' + file_names + ' \n')
+            addContentToFile(file_path + '/' + fileJson.type + '/style.' + fileJson.type, fileJson.type, file_names)
+        } catch(e) {
+            throwError(e)
+        }
+        
+    }
+}
+
+
+function addContentToFile(file_path, type, file_names) {
+    readFileText(file_path, function(contents, content_path) {
+        if( type == 'sass') {
+            var newContent = [
+                "@import \'.\/variables/" + file_names + "_var\'",
+                "@import \'.\/modules/" + file_names + "\'",
+                "@import \'.\/partials/" + file_names + "\'"
+            ]
+        } else {
+            var newContent = [
+                "@import \'.\/variables/" + file_names + "_var\';",
+                "@import \'.\/modules/" + file_names + "\';",
+                "@import \'.\/partials/" + file_names + "\';"
+                
+            ]
+        }
+
+        if (contents) {
+            var originalContent = contents
+
+            if(originalContent[originalContent.length - 1] != EOL) {
+                originalContent += EOL
+            }
+
+            var varLastIndex = originalContent.lastIndexOf('variable')
+            var varIndex = originalContent.indexOf('\n', varLastIndex)
+            originalContent = originalContent.slice(0, varIndex) + EOL + newContent[0] + originalContent.slice(varIndex)
+
+            var modLastIndex = originalContent.lastIndexOf('module')
+            var modIndex = originalContent.indexOf('\n', modLastIndex)
+            originalContent = originalContent.slice(0, modIndex) + EOL + newContent[1] + originalContent.slice(modIndex)
+
+            var partLastIndex = originalContent.lastIndexOf('partial')
+            var partIndex = originalContent.indexOf('\n', partLastIndex)
+            originalContent = originalContent.slice(0, partIndex) + EOL + newContent[2] + originalContent.slice(partIndex)
+        } else {
+            originalContent = [
+                "// Variables",
+                newContent[0],
+                "\n\n",
+                "// Modules",
+                newContent[1],
+                "\n\n",
+                "// Partials",
+                newContent[2]
+            ].join('\n')
+        }
+        writeFile(content_path, originalContent, function(err) {
+            if(err) throw err
+            console.log()
+            console.log('   \x1b[31mmodified\x1b[0m : ' + path.relative(process.cwd(), content_path))
+            console.log()
+        })
+    })
+}
+
+
+/**
+ * Read file contents
+ *
+ * @param {String} file_path
+ * @param {Function} cb
+ */
+
+function readFileText(file_path, cb) {
+    readFile(file_path, {encoding: 'utf8'}, function(err, buffer) {
+        if(err) throw err
+        return cb(buffer, file_path)
+    });
+}
+
+
+/**
+ * Mkdir -p.
+ *
+ * @param {String} path
+ * @param {Function} fn
+ */
+
+function mkdir(path, fn) {
+    mkdirp(path, MODE_0755, function (err) {
+        if (err) throw err
+        console.log('   \x1b[36mcreate\x1b[0m : ' + path)
+        fn && fn()
+    })
+}
+
+/**
+ * Generate a callback function for commander to warn about renamed option.
+ *
+ * @param {String} originalName
+ * @param {String} newName
+ */
+
+function renamedOption(originalName, newName) {
+    return function (val) {
+        warning(util.format("option `%s' has been renamed to `%s'", originalName, newName))
+        return val
+    }
+}
+
+/**
+ * Display a warning similar to how errors are displayed by commander.
+ *
+ * @param {String} message
+ */
+
+function warning(message) {
+    console.error()
+    message.split('\n').forEach(function (line) {
+        console.error('  warning: %s', line)
+    })
+    console.error()
+}
+
+/**
+ * echo str > path.
+ *
+ * @param {String} path
+ * @param {String} str
+ */
+
+function write(toPath, str, mode) {
+    fs.writeFileSync(toPath, str, {
+        mode: mode || MODE_0666
+    })
+    console.log('   \x1b[36mcreate\x1b[0m : ' + path.relative(process.cwd(), toPath))
+}

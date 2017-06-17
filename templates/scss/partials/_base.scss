@@ -1,0 +1,11 @@
+// Normalize tag styles.
+// Including html, body, headings, paragraph, lists, etc.
+
+* {
+    @include border-box;
+}
+
+
+body {
+    font-size: $body-font-size
+}
