@@ -71,7 +71,7 @@ describe('sass(1)', function () {
             var contents = fs.readFileSync(file, 'utf8')
             assert.equal(contents, '{\n' +
                 '  "name": "sass(1)-(no-args)",\n' +
-                '  "cli_version": "1.0.1",\n' +
+                '  "cli_version": "1.0.2",\n' +
                 '  "path": ".",\n' +
                 '  "type": "scss"\n' +
                 '}\n')

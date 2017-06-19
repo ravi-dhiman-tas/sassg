@@ -1,6 +1,6 @@
 {
     "name": "sassg",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "CLI tool for Sass/SCSS",
     "scripts": {
         "test": "mocha"
@@ -16,14 +16,14 @@
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/ravid7000/sass-cli.git"
+        "url": "https://github.com/ravid7000/sassg"
     },
     "bugs": {
-        "url": "https://github.com/ravid7000/sass-cli/issues"
+        "url": "https://github.com/ravid7000/sassg/issues"
     },
     "author": "Ravi Dhiman",
     "license": "MIT",
-    "main": "bin/sass-cli",
+    "main": "bin/sasscli",
     "preferGlobal": true,
     "bin": {
         "sassg": "./bin/sasscli"
