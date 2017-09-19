@@ -9,6 +9,7 @@ var fs = require('fs'),
     readline = require('readline'),
     installApp = require('../scripts/install'),
     generateFiles = require('../scripts/generate'),
+    watchCmd = require('../scripts/run'),
     MODE_0666 = parseInt('0666', 8),
     MODE_0755 = parseInt('0755', 8),
     pkg = require('../package.json'),
@@ -57,6 +58,8 @@ program
     .option('-s, --sass', 'use sass stylesheet (defaults to scss)')
     .option('-u, --unit [value]', 'specify units (px|em|rem) (defaults to px)')
     .option('g,  generate', 'generate component')
+    .option('watch', 'run compiler in watch mode')
+    .option('build', 'build stylesheet in dist')
     .option('-f, --force', 'force on non-empty directory')
     .parse(process.argv)
 
@@ -201,6 +204,10 @@ function main() {
         generateFiles({
             configFile: configFile,
             file_name: program.args.shift()
+        })
+    } else if(program.watch) {
+        watchCmd({
+            configFile: configFile
         })
     } else {
         var destinationPath = program.new || '.'

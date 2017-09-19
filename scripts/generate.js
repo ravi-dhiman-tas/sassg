@@ -194,6 +194,7 @@ function write(toPath, str, mode) {
     return true
 }
 
+
 /**
  * Global error config
  *

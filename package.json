@@ -1,55 +1,57 @@
 {
-    "name": "sassg",
-    "version": "1.0.2",
-    "description": "CLI tool for Sass/SCSS",
-    "scripts": {
-        "test": "mocha"
-    },
-    "keywords": [
-        "sass",
-        "cli",
-        "sass-cli",
-        "scss",
-        "sassg",
-        "sasscli",
-        "sass/scss"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/ravid7000/sassg"
-    },
-    "bugs": {
-        "url": "https://github.com/ravid7000/sassg/issues"
-    },
-    "author": "Ravi Dhiman",
-    "license": "MIT",
-    "main": "bin/sasscli",
-    "preferGlobal": true,
-    "bin": {
-        "sassg": "./bin/sasscli"
-    },
-    "dependencies": {
-        "commander": "^2.9.0",
-        "linebyline": "^1.3.0",
-        "mkdirp": "^0.5.1",
-        "path": "^0.12.7",
-        "read-file": "^0.2.0",
-        "readline": "^1.3.0",
-        "sorted-object": "^2.0.1",
-        "util": "^0.10.3",
-        "write": "^0.3.3"
-    },
-    "devDependencies": {
-        "mocha": "2.5.3",
-        "rimraf": "2.5.4"
-    },
-    "engines": {
-        "node": ">= 0.12"
-    },
-    "files": [
-        "LICENSE",
-        "bin/",
-        "templates/",
-        "assets/"
-    ]
+  "name": "sassg",
+  "version": "1.0.2",
+  "description": "CLI tool for Sass/SCSS",
+  "scripts": {
+    "test": "mocha"
+  },
+  "keywords": [
+    "sass",
+    "cli",
+    "sass-cli",
+    "scss",
+    "sassg",
+    "sasscli",
+    "sass/scss"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ravid7000/sassg"
+  },
+  "bugs": {
+    "url": "https://github.com/ravid7000/sassg/issues"
+  },
+  "author": "Ravi Dhiman",
+  "license": "MIT",
+  "main": "bin/sasscli",
+  "preferGlobal": true,
+  "bin": {
+    "sassg": "./bin/sasscli"
+  },
+  "dependencies": {
+    "commander": "^2.9.0",
+    "linebyline": "^1.3.0",
+    "mkdirp": "^0.5.1",
+    "node-sass": "^4.5.3",
+    "path": "^0.12.7",
+    "read-file": "^0.2.0",
+    "readline": "^1.3.0",
+    "sorted-object": "^2.0.1",
+    "util": "^0.10.3",
+    "watch": "^1.0.2",
+    "write": "^0.3.3"
+  },
+  "devDependencies": {
+    "mocha": "2.5.3",
+    "rimraf": "2.5.4"
+  },
+  "engines": {
+    "node": ">= 0.12"
+  },
+  "files": [
+    "LICENSE",
+    "bin/",
+    "templates/",
+    "assets/"
+  ]
 }
